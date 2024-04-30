@@ -9,6 +9,43 @@ import matplotlib.cm as cm
 import cmocean
 import netCDF4 as nc
 
+def getStation(file1, st, comp=1):
+    elev1 = []
+
+    with open(file1) as f1:
+        l1 = f1.readline()
+        l1 = f1.readline()
+
+        # Get timestep info
+        info = l1.split()
+        skip = float(info[3])
+        dt = float(info[2]) / skip
+
+        l1 = f1.readline()
+
+        for lineno, line in enumerate(f1):
+            lines = line.split()
+            if lines[0] == str(st):
+                if comp == 2:
+                    x = lines[2]
+                else:
+                    x = lines[1]
+
+                if x == "NaN":
+                    y = np.nan
+                else:
+                    y = float(x)
+
+                # If dry, set to zero
+                if y < -1000:
+                    y = 0.
+
+                elev1.append(y)
+
+    time = np.arange(len(elev1))*dt*skip/86400.
+
+    return time, np.array(elev1)
+
 
 def read_triangulation(fname: str) -> (tri.Triangulation, np.ndarray):
     """ Read a fort.14 file and return its triangulation data as a
