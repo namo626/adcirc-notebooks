@@ -71,17 +71,23 @@ def read_triangulation(fname: str) -> (tri.Triangulation, np.ndarray):
     return tr, bathy
 
 
-def plot_bathy(fname: str):
+def plot_bathy(fname: str, figsize=None, plot_grid=False):
     """ Plot the bathymetry of a specified fort.14 file name. Value is negative below geoid,
     i.e. the values from the fort.14 are inverted.
     """
-    fig, ax = plt.subplots(figsize=(10,7))
+    if figsize is None:
+        figsize = (10,7)
+        
+    fig, ax = plt.subplots(figsize=figsize)
 
     tr, bathy = read_triangulation(fname)
     bathy = -bathy
     ticks = np.linspace(np.min(bathy), np.max(bathy), 50)
 
     tcf = ax.tricontourf(tr, bathy, levels=ticks)
+    if plot_grid:
+        ax.triplot(tr)
+
     fig.colorbar(tcf)
     ax.set_title('Bathymetry (m)')
     plt.show()

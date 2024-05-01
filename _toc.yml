@@ -10,3 +10,4 @@ chapters:
 - file: SlopingBeach.ipynb
 - file: wetdry.ipynb
 - file: stabilized.ipynb
+- file: rain.ipynb
