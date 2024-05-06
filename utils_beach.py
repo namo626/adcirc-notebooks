@@ -71,7 +71,7 @@ def read_triangulation(fname: str) -> (tri.Triangulation, np.ndarray):
     return tr, bathy
 
 
-def plot_bathy(fname: str, figsize=None, plot_grid=False):
+def plot_bathy(fname: str, figsize=None, plot_grid=False, extent=None):
     """ Plot the bathymetry of a specified fort.14 file name. Value is negative below geoid,
     i.e. the values from the fort.14 are inverted.
     """
@@ -87,6 +87,10 @@ def plot_bathy(fname: str, figsize=None, plot_grid=False):
     tcf = ax.tricontourf(tr, bathy, levels=ticks)
     if plot_grid:
         ax.triplot(tr)
+
+    if extent is not None:
+        ax.set_xlim([extent[0], extent[1]])
+        ax.set_ylim([extent[2], extent[3]])
 
     fig.colorbar(tcf)
     ax.set_title('Bathymetry (m)')
@@ -114,6 +118,14 @@ def read_63(fname: str, nodes: list, total_nodes: int, col: int=1) -> list:
     cross_elev.iloc[:,0] = cross_elev.iloc[:,0].astype(int)
     
     return cross_elev.iloc[:,col].values
+
+def read_63_all(fname: str, meshname: str):
+    tr,_ = read_triangulation(meshname)
+    total_nodes = len(tr.x)
+    node_list = list(range(1, total_nodes+1))
+
+    d1 = read_63(fname, nodes=node_list, total_nodes=total_nodes)
+    return tr, d1
 
 def make_tri_plot_function(tr: tri.Triangulation, f63: str) -> Callable:
     """ Plot fort.63-like 2D nodal values (e.g. elevation) of an unstructured triangular mesh given
@@ -163,6 +175,7 @@ def animate_mesh(
     vmax: float=1,
     extent: list=None,
     frames: int=None,
+    figsize: tuple=(13,8),
     frameskip: int=1) -> animation:
 
     """ Given a list of tuples of [ (label, 1D nodal time series data) ], return a function f = f(i) which, for each integer i,
@@ -174,11 +187,13 @@ def animate_mesh(
         
     num_subplots = len(data)
     plt.ioff()
-    fig, axs = plt.subplots(nrows=1, ncols=len(data), figsize=(13,8))
+    fig, axs = plt.subplots(nrows=1, ncols=len(data), figsize=figsize)
     total_nodes = len(tr.x)
     node_list = list(range(1, total_nodes+1))
 
     cmap = cmocean.cm.deep.reversed()
+    #cmap = cmocean.cm.balance
+
     cmap.set_bad(color='lightgray')
     #cmap.set_under(color='lightgray')
 
@@ -232,15 +247,21 @@ def animate_mesh(
             ax.set_facecolor('lightgray')
             z_data_frame = zs[i][frame*total_nodes: (frame+1)*total_nodes]
 
+           
+                
             isbad = z_data_frame < -1000
             mask = np.any(np.where(isbad[tr.triangles], True, False), axis=1)
             tr.set_mask(mask)
 
-            
-            tcf = ax.tricontourf(tr, z_data_frame, levels=ticks, extend='min', cmap=cmap, extent=extent)
-            
+            try:
+                tcf = ax.tricontourf(tr, z_data_frame, levels=ticks, extend='min', cmap=cmap, extent=extent)
+            except Exception:
+                tcf = None
+                pass
+                
             if plot_grid:
                 ax.triplot(tr, lw=0.5)
+            
             ax.set_title(data[i][0])
             
             if extent is not None:
