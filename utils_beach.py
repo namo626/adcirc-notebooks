@@ -42,9 +42,32 @@ def getStation(file1, st, comp=1):
 
                 elev1.append(y)
 
+    if not elev1:
+        raise ValueError("Station %d does not exist" % st )
+
     time = np.arange(len(elev1))*dt*skip/86400.
 
     return time, np.array(elev1)
+
+def plot_station(st: int,
+                data: list,
+                title: str='Gauge comparison'):
+
+    plt.clf()
+    f = plt.figure()
+    
+    for file, label in data:
+        t, e = getStation(file, st)
+        plt.plot(t, e, label=label)
+        
+    plt.grid()
+    plt.xlabel('Days')
+    plt.ylabel('Water level (m)')
+    plt.legend()
+    plt.title(title)
+    plt.show()
+    plt.clf()
+    return f
 
 
 def read_triangulation(fname: str) -> (tri.Triangulation, np.ndarray):
@@ -75,6 +98,8 @@ def plot_bathy(fname: str, figsize=None, plot_grid=False, extent=None):
     """ Plot the bathymetry of a specified fort.14 file name. Value is negative below geoid,
     i.e. the values from the fort.14 are inverted.
     """
+    plt.clf()
+    
     if figsize is None:
         figsize = (10,7)
         
@@ -95,6 +120,7 @@ def plot_bathy(fname: str, figsize=None, plot_grid=False, extent=None):
     fig.colorbar(tcf)
     ax.set_title('Bathymetry (m)')
     plt.show()
+    plt.clf()
 
     return fig
     
@@ -170,7 +196,8 @@ def read_63_nc(
 def animate_mesh(
     tr: tri.Triangulation,
     data: list,
-    plot_grid: bool=True,
+    plot_grid: bool=False,
+    plot_contour: bool=False,
     vmin: float=-1,
     vmax: float=1,
     extent: list=None,
@@ -224,12 +251,15 @@ def animate_mesh(
         
         zs.append(z_data)
         z_data_frame = z_data[: total_nodes]
+      
+            
 
-        tcf = ax.tricontourf(tr, z_data_frame, levels=ticks, extend='min', cmap=cmap, extent=extent)
+        tcf = ax.tricontourf(tr, z_data_frame, levels=ticks, extend='both', cmap=cmap, extent=extent, norm='symlog')
         if plot_grid:
             ax.triplot(tr)
-            
-        fig.colorbar(tcf)
+
+      
+        cb = fig.colorbar(tcf)
         tcfs.append(tcf)
        
 
@@ -254,13 +284,18 @@ def animate_mesh(
             tr.set_mask(mask)
 
             try:
-                tcf = ax.tricontourf(tr, z_data_frame, levels=ticks, extend='min', cmap=cmap, extent=extent)
+                if plot_contour:
+                    ax.tricontour(tr, z_data_frame, levels=10, linewidths=0.5, colors='0.8')
+                    
+                tcf = ax.tricontourf(tr, z_data_frame, levels=ticks, extend='both', cmap=cmap, extent=extent, norm='symlog')
+
             except Exception:
                 tcf = None
-                pass
                 
             if plot_grid:
                 ax.triplot(tr, lw=0.5)
+
+           
             
             ax.set_title(data[i][0])
             
@@ -268,7 +303,6 @@ def animate_mesh(
                 ax.set_xlim([extent[0], extent[1]])
                 ax.set_ylim([extent[2], extent[3]])
 
-            #fig.colorbar(tcf, ticks=ticks)
             
         
         return tcf
