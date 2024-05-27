@@ -17,6 +17,9 @@ coupling-serial: copy
 		# conda run -n chg gprof2dot coupling.prof | dot -Tpng -Gdpi=300 -o coupling_prof.png; \
 	fi
 
+prof:
+	mamba run -n chg gprof2dot serial2.prof | dot -Tpng -Gdpi=300 -o serial2.png; \
+
 dg-serial:
 	cp $(INSTALL)/dgswem_serial .
 	time ./dgswem_serial

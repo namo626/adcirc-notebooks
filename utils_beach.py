@@ -58,7 +58,7 @@ def plot_station(st: int,
     
     for file, label in data:
         t, e = getStation(file, st)
-        plt.plot(t, e, label=label)
+        plt.plot(t, e, label=label, linewidth=1)
         
     plt.grid()
     plt.xlabel('Days')
@@ -306,8 +306,10 @@ def animate_mesh(
             
         
         return tcf
+
         
     ani = animation.FuncAnimation(fig, animate, frames=range(0,frames,frameskip), interval=200, blit=False)
+
     return ani
 
 
